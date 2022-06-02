@@ -79,6 +79,7 @@ class MainFragment : Fragment() {
     private val binding get() = bindingRef!!
     private var emoteMenuBottomSheetBehavior: BottomSheetBehavior<MaterialCardView>? = null
     private var mentionBottomSheetBehavior: BottomSheetBehavior<View>? = null
+    private var searchBottomSheetBehavior: BottomSheetBehavior<View>? = null
 
 
     @Inject
@@ -135,6 +136,10 @@ class MainFragment : Fragment() {
 
             childFragmentManager.findFragmentById(R.id.mention_fragment)?.let {
                 mentionBottomSheetBehavior = BottomSheetBehavior.from(it.requireView()).apply { setupMentionSheet() }
+            }
+
+            childFragmentManager.findFragmentById(R.id.search_fragment)?.let {
+                searchBottomSheetBehavior = BottomSheetBehavior.from(it.requireView()).apply { setupSearchSheet() }
             }
 
             tabLayoutMediator = TabLayoutMediator(tabs, chatViewpager) { tab, position ->
@@ -200,6 +205,7 @@ class MainFragment : Fragment() {
                             icon.setTintList(ColorStateList.valueOf(color))
                         }
                     }
+                    findItem(R.id.menu_search)?.isVisible = hasChannels
 
                     findItem(R.id.progress)?.apply {
                         isVisible = shouldShowProgress
@@ -235,6 +241,7 @@ class MainFragment : Fragment() {
                     R.id.menu_capture_video  -> startCameraCapture(captureVideo = true)
                     R.id.menu_clear          -> clear()
                     R.id.menu_settings       -> navigateSafe(R.id.action_mainFragment_to_overviewSettingsFragment).also { hideKeyboard() }
+                    R.id.menu_search         -> searchBottomSheetBehavior?.expand()
                     else                     -> return false
                 }
                 return true
@@ -368,6 +375,7 @@ class MainFragment : Fragment() {
                 when {
                     emoteMenuBottomSheetBehavior?.isVisible == true -> emoteMenuBottomSheetBehavior?.hide()
                     mentionBottomSheetBehavior?.isVisible == true   -> mentionBottomSheetBehavior?.hide()
+                    searchBottomSheetBehavior?.isVisible == true    -> searchBottomSheetBehavior?.hide()
                     mainViewModel.isFullscreen                      -> mainViewModel.toggleFullscreen()
                     else                                            -> finish()
                 }
@@ -442,6 +450,7 @@ class MainFragment : Fragment() {
         bindingRef = null
         emoteMenuBottomSheetBehavior = null
         mentionBottomSheetBehavior = null
+        searchBottomSheetBehavior = null
         if (::preferences.isInitialized) {
             preferences.unregisterOnSharedPreferenceChangeListener(preferenceListener)
         }
@@ -907,6 +916,14 @@ class MainFragment : Fragment() {
         })
     }
 
+    private fun BottomSheetBehavior<View>.setupSearchSheet() {
+        hide()
+        addBottomSheetCallback(object: BottomSheetBehavior.BottomSheetCallback() {
+            override fun onSlide(bottomSheet: View, slideOffset: Float) = Unit
+            override fun onStateChanged(bottomSheet: View, newState: Int) = Unit
+        })
+    }
+
     private fun calculatePageLimit(size: Int): Int = when {
         size > 1 -> size - 1
         else     -> ViewPager2.OFFSCREEN_PAGE_LIMIT_DEFAULT
@@ -1025,6 +1042,7 @@ class MainFragment : Fragment() {
 
             if (isPortrait) {
                 val mentionsView = childFragmentManager.findFragmentById(R.id.mention_fragment)?.view
+                val searchView = childFragmentManager.findFragmentById(R.id.search_fragment)?.view
                 binding.emoteMenuBottomSheet
                     .takeIf { emoteMenuBottomSheetBehavior?.isVisible == false }
                     ?.isInvisible = true
@@ -1033,10 +1051,15 @@ class MainFragment : Fragment() {
                     .takeIf { mentionBottomSheetBehavior?.isVisible == false }
                     ?.isInvisible = true
 
+                searchView
+                    .takeIf { searchBottomSheetBehavior?.isVisible == false }
+                    ?.isInvisible = true
+
                 binding.root.post {
                     (activity as? MainActivity)?.setFullScreen(enabled = !hasFocus && isFullscreen, changeActionBarVisibility = false)
                     binding.emoteMenuBottomSheet.isInvisible = false
                     mentionsView?.isInvisible = false
+                    searchView?.isInvisible = false
                 }
                 return@setOnFocusChangeListener
             }

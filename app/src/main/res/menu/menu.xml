@@ -117,4 +117,9 @@
         android:id="@+id/menu_settings"
         android:title="@string/settings"
         app:showAsAction="never" />
+
+    <item
+        android:id="@+id/menu_search"
+        android:title="Search"
+        app:showAsAction="ifRoom" />
 </menu>
